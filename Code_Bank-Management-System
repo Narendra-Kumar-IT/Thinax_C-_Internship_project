@@ -1,0 +1,288 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+class BankAccount {
+private:
+    int accountNo;
+    string name;
+    double balance;
+
+public:
+    BankAccount() {
+        accountNo = 0;
+        name = "";
+        balance = 0;
+    }
+
+    void createAccount() {
+        cout << "Enter Account Number: ";
+        cin >> accountNo;
+
+        cin.ignore();
+
+        cout << "Enter Account Holder Name: ";
+        getline(cin, name);
+
+        cout << "Enter Initial Balance: ";
+        cin >> balance;
+    }
+
+    int getAccountNo() const {
+        return accountNo;
+    }
+
+    string getName() const {
+        return name;
+    }
+
+    double getBalance() const {
+        return balance;
+    }
+
+    void deposit(double amount) {
+        balance += amount;
+    }
+
+    bool withdraw(double amount) {
+        if (amount > balance)
+            return false;
+
+        balance -= amount;
+        return true;
+    }
+
+    void display() const {
+        cout << "\n-----------------------------";
+        cout << "\nAccount Number : " << accountNo;
+        cout << "\nName           : " << name;
+        cout << "\nBalance        : " << balance;
+        cout << "\n-----------------------------\n";
+    }
+
+    void saveToFile(ofstream &out) {
+        out << accountNo << "\n"
+            << name << "\n"
+            << balance << "\n";
+    }
+
+    void loadFromFile(ifstream &in) {
+        in >> accountNo;
+        in.ignore();
+
+        getline(in, name);
+        in >> balance;
+        in.ignore();
+    }
+};
+
+vector<BankAccount> accounts;
+
+void saveAccounts() {
+    ofstream out("accounts.txt");
+
+    out << accounts.size() << "\n";
+
+    for (auto &acc : accounts)
+        acc.saveToFile(out);
+
+    out.close();
+}
+
+void loadAccounts() {
+    ifstream in("accounts.txt");
+
+    if (!in)
+        return;
+
+    int count;
+    in >> count;
+    in.ignore();
+
+    accounts.clear();
+
+    for (int i = 0; i < count; i++) {
+        BankAccount acc;
+        acc.loadFromFile(in);
+        accounts.push_back(acc);
+    }
+
+    in.close();
+}
+
+int findAccount(int accNo) {
+    for (int i = 0; i < accounts.size(); i++) {
+        if (accounts[i].getAccountNo() == accNo)
+            return i;
+    }
+
+    return -1;
+}
+
+void createAccount() {
+    BankAccount acc;
+    acc.createAccount();
+
+    if (findAccount(acc.getAccountNo()) != -1) {
+        cout << "Account already exists!\n";
+        return;
+    }
+
+    accounts.push_back(acc);
+    saveAccounts();
+
+    cout << "Account created successfully.\n";
+}
+
+void depositMoney() {
+    int accNo;
+    double amount;
+
+    cout << "Enter Account Number: ";
+    cin >> accNo;
+
+    int index = findAccount(accNo);
+
+    if (index == -1) {
+        cout << "Account not found!\n";
+        return;
+    }
+
+    cout << "Enter Amount: ";
+    cin >> amount;
+
+    accounts[index].deposit(amount);
+
+    saveAccounts();
+
+    cout << "Deposit successful.\n";
+}
+
+void withdrawMoney() {
+    int accNo;
+    double amount;
+
+    cout << "Enter Account Number: ";
+    cin >> accNo;
+
+    int index = findAccount(accNo);
+
+    if (index == -1) {
+        cout << "Account not found!\n";
+        return;
+    }
+
+    cout << "Enter Amount: ";
+    cin >> amount;
+
+    if (accounts[index].withdraw(amount)) {
+        saveAccounts();
+        cout << "Withdrawal successful.\n";
+    } else {
+        cout << "Insufficient balance.\n";
+    }
+}
+
+void searchAccount() {
+    int accNo;
+
+    cout << "Enter Account Number: ";
+    cin >> accNo;
+
+    int index = findAccount(accNo);
+
+    if (index == -1) {
+        cout << "Account not found!\n";
+        return;
+    }
+
+    accounts[index].display();
+}
+
+void viewAllAccounts() {
+    if (accounts.empty()) {
+        cout << "No accounts available.\n";
+        return;
+    }
+
+    for (auto &acc : accounts)
+        acc.display();
+}
+
+void deleteAccount() {
+    int accNo;
+
+    cout << "Enter Account Number: ";
+    cin >> accNo;
+
+    int index = findAccount(accNo);
+
+    if (index == -1) {
+        cout << "Account not found!\n";
+        return;
+    }
+
+    accounts.erase(accounts.begin() + index);
+
+    saveAccounts();
+
+    cout << "Account deleted successfully.\n";
+}
+
+int main() {
+    loadAccounts();
+
+    int choice;
+
+    do {
+        cout << "\n========== BANK MANAGEMENT SYSTEM ==========\n";
+        cout << "1. Create Account\n";
+        cout << "2. Deposit Money\n";
+        cout << "3. Withdraw Money\n";
+        cout << "4. Search Account\n";
+        cout << "5. View All Accounts\n";
+        cout << "6. Delete Account\n";
+        cout << "7. Exit\n";
+        cout << "Enter Choice: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1:
+            createAccount();
+            break;
+
+        case 2:
+            depositMoney();
+            break;
+
+        case 3:
+            withdrawMoney();
+            break;
+
+        case 4:
+            searchAccount();
+            break;
+
+        case 5:
+            viewAllAccounts();
+            break;
+
+        case 6:
+            deleteAccount();
+            break;
+
+        case 7:
+            cout << "Thank you for using the system.\n";
+            break;
+
+        default:
+            cout << "Invalid choice!\n";
+        }
+
+    } while (choice != 7);
+
+    return 0;
+}
